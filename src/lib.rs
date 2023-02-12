@@ -169,7 +169,7 @@ macro_rules! impl_method {
         fn $name<F>(&self, mut row_cb: F) -> ::rusqlite::Result<()>
         where F: FnMut(&::rusqlite::Row) -> ::rusqlite::Result<()>
         {
-            let mut stmt = self.prepare( $text )?;
+            let mut stmt = self.prepare_cached( $text )?;
             let mut rows = stmt.raw_query();
             while let Some(row) = rows.next()? {
                 row_cb(row)?;
@@ -181,7 +181,7 @@ macro_rules! impl_method {
         fn $name<F>(&self $($fn_params)+ , mut row_cb: F) -> ::rusqlite::Result<()>
         where F: FnMut(&::rusqlite::Row) -> ::rusqlite::Result<()>
         {
-            let mut stmt = self.prepare( $crate::sql_literal!( $($param)+ => $($text)+ ) )?;
+            let mut stmt = self.prepare_cached( $crate::sql_literal!( $($param)+ => $($text)+ ) )?;
             $crate::bind_args!($($param)+ => stmt 1usize);
             let mut rows = stmt.raw_query();
             while let Some(row) = rows.next()? {
@@ -198,7 +198,7 @@ macro_rules! impl_method {
             let mut args = ::std::vec::Vec::<&dyn ::rusqlite::ToSql>::with_capacity($crate::num_args!($($pv $param)+));
             let mut i = 0;
             $crate::dynamic_sql!(sql args i $($text)+);
-            let mut stmt = self.prepare(&sql)?;
+            let mut stmt = self.prepare_cached(&sql)?;
             let mut rows = stmt.query(args.as_slice())?;
             while let Some(row) = rows.next()? {
                 row_cb(row)?;
@@ -208,13 +208,13 @@ macro_rules! impl_method {
     };
     ( ! $name:ident () () () => () $text:literal ) => {
         fn $name(&self) -> ::rusqlite::Result<usize> {
-            let mut stmt = self.prepare( $text )?;
+            let mut stmt = self.prepare_cached( $text )?;
             stmt.raw_execute()
         }
     };
     ( ! $name:ident () ($($fn_params:tt)+) () => ( $(: $param:ident)+ ) $($text:tt)+) => {
         fn $name(&self $($fn_params)+ ) -> ::rusqlite::Result<usize> {
-            let mut stmt = self.prepare( $crate::sql_literal!( $($param)+ => $($text)+ ) )?;
+            let mut stmt = self.prepare_cached( $crate::sql_literal!( $($param)+ => $($text)+ ) )?;
             $crate::bind_args!($($param)+ => stmt 1usize);
             stmt.raw_execute()
         }
@@ -225,7 +225,7 @@ macro_rules! impl_method {
             let mut args = ::std::vec::Vec::<&dyn ::rusqlite::ToSql>::with_capacity($crate::num_args!($($pv $param)+));
             let mut i = 0;
             $crate::dynamic_sql!(sql args i $($text)+);
-            let mut stmt = self.prepare(&sql)?;
+            let mut stmt = self.prepare_cached(&sql)?;
             stmt.execute(args.as_slice())
         }
     };
@@ -238,7 +238,7 @@ macro_rules! impl_method {
         fn $name<F,R>(&self, row_cb: F) -> ::rusqlite::Result<R>
         where F: FnOnce(&::rusqlite::Row) -> ::rusqlite::Result<R>
         {
-            let mut stmt = self.prepare( $text )?;
+            let mut stmt = self.prepare_cached( $text )?;
             let mut rows = stmt.raw_query();
             match rows.next()? {
                 Some(row) => row_cb(row),
@@ -250,7 +250,7 @@ macro_rules! impl_method {
         fn $name<F,R>(&self $($fn_params)+ , row_cb: F) -> ::rusqlite::Result<R>
         where F: FnOnce(&::rusqlite::Row) -> ::rusqlite::Result<R>
         {
-            let mut stmt = self.prepare( $crate::sql_literal!( $($param)+ => $($text)+ ) )?;
+            let mut stmt = self.prepare_cached( $crate::sql_literal!( $($param)+ => $($text)+ ) )?;
             $crate::bind_args!($($param)+ => stmt 1usize);
             let mut rows = stmt.raw_query();
             match rows.next()? {
@@ -267,7 +267,7 @@ macro_rules! impl_method {
             let mut args = ::std::vec::Vec::<&dyn ::rusqlite::ToSql>::with_capacity($crate::num_args!($($pv $param)+));
             let mut i = 0;
             $crate::dynamic_sql!(sql args i $($text)+);
-            let mut stmt = self.prepare(&sql)?;
+            let mut stmt = self.prepare_cached(&sql)?;
             let mut rows = stmt.query(args.as_slice())?;
             match rows.next()? {
                 Some(row) => row_cb(row),
